@@ -5,6 +5,7 @@ logs
 *.log
 
 .idea/*
+.idea
 .idea/load-data-binance.iml
 .idea/modules.xml
 for_gitignore
