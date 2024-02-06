@@ -26,7 +26,7 @@ class Binance(websocket.WebSocketApp):
 
     # подключение к базе данных
     def connectDB(self):
-        return pymysql.connect(host='127.0.0.1', port=int(3306), user="root", password='password', db="binance", charset='utf8mb4')
+        return pymysql.connect(host='127.0.0.1', port=int(3306), user="root", password='745088Vt', db="binance", charset='utf8mb4')
 
     # создание запроса к Binance
     def message(self, msg):
@@ -69,7 +69,16 @@ class Binance(websocket.WebSocketApp):
         if not p:
             print('ИДЕТ ЗАГРУЗКА ОСНОВНОГО ПОТОКА В БАЗУ ДАННЫХ\n')
 
-        # функции потоков
-        def all_market_tickers():
-            # загрузка url и параметров
-            return threading.Thread(target=Binance, args=('wss://fstream.binance.com:443/ws/!ticker@arr',)).start()
+
+    # функции потоков
+    def all_market_tickers():
+        # загрузка url и параметров
+        return threading.Thread(target=Binance, args=('wss://fstream.binance.com:443/ws/!ticker@arr',)).start()
+
+    # данные конкретного фьючерса
+    def symbol_ticker(symbol):
+        return threading.Thread(target=Binance, args=(f'wss://fstream.binance.com:443/ws/{symbol}@ticker',)).start()
+
+    # создание многопоточности
+    def threads(query1, query2):
+        return threading.Thread(target=Binance, args=(f'wss://fstream.binance.com:443/stream?streams={query1}/{query2}',)).start()
