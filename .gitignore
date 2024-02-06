@@ -1,4 +1,10 @@
 # Environments
 venv/
+# Logs
+logs
+*.log
 
-
+.idea/*
+.idea/load-data-binance.iml
+.idea/modules.xml
+for_gitignore

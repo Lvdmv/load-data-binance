@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/git-class-binance.iml" filepath="$PROJECT_DIR$/.idea/git-class-binance.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/load-data-binance.iml" filepath="$PROJECT_DIR$/.idea/load-data-binance.iml" />
     </modules>
   </component>
 </project>
