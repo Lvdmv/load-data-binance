@@ -6,7 +6,7 @@ import json
 import pymysql
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv ()
 
 
 # Создадим класс Binance, наследующий библиотеу WebSocket с приложением WebSocketApp
