@@ -4,9 +4,14 @@ import websocket
 import threading
 import json
 import pymysql
+import os
 from dotenv import load_dotenv
 
-load_dotenv ()
+load_dotenv()  # переменные среды храняться в env.example
+PASSWORD = os.getenv("PASSWORD")
+HOST = os.getenv("HOST")
+PORT = int(os.getenv("PORT"))
+DB = os.getenv("DB")
 
 
 # Создадим класс Binance, наследующий библиотеу WebSocket с приложением WebSocketApp
@@ -68,16 +73,11 @@ class Binance(websocket.WebSocketApp):
         """
         print('\nWebsocket was opened\n')
 
-    def connectDB(self, password: str):
+    def connectDB(self):
         """
         Подключение к базе данных
-
-        Parameters
-        ----------
-        password: str
-            пароль
         """
-        return pymysql.connect(host='127.0.0.1', port=int(3306), user="root", password=password, db="binance", charset='utf8mb4')
+        return pymysql.connect(host=HOST, port=PORT, user="root", password=PASSWORD, db=DB, charset='utf8mb4')
 
     def message(self, msg: str):
         """
@@ -117,9 +117,9 @@ class Binance(websocket.WebSocketApp):
         new_data: list
             список данных по инструменту
         p: bool
-            флаг отвечающий за загрузку данных  в базу или вывод из в терминал
+            флаг отвечающий за загрузку данных в базу или вывод в терминал
         """
-        conn = self.connectDB(PASSWORD)  # создание соединения с базой данных
+        conn = self.connectDB()  # создание соединения с базой данных
         cursor = conn.cursor()
         if isinstance(new_data, list):
             for crypto_symbol in new_data:
@@ -151,5 +151,3 @@ def symbol_ticker(symbol: str):
 def threads(query1: str, query2: str):
     """Функция для создания многопоточного запроса по нескольким инструментам"""
     return threading.Thread(target=Binance, args=(f'wss://fstream.binance.com:443/stream?streams={query1}/{query2}',)).start()
-
-symbol_ticker('ethusdt')
