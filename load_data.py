@@ -4,8 +4,9 @@ import websocket
 import threading
 import json
 import pymysql
+from dotenv import load_dotenv
 
-PASSWORD = '#######'
+load_dotenv()
 
 
 # Создадим класс Binance, наследующий библиотеу WebSocket с приложением WebSocketApp
@@ -57,16 +58,15 @@ class Binance(websocket.WebSocketApp):
         self.on_close = lambda ws: print('### closed ###')
         self.run_forever()  # метод для запуска главного цикла обработки сообщений
 
-    def on_open(self, ws: str,):
+    def on_open(self, ws: websocket.WebSocketApp):
         """
         Открытие соединения
 
         Parameters
         ----------
-        ws: str
-            объект WebSocketApp
+        ws: объект WebSocketApp
         """
-        print('Websocket was opened')
+        print('\nWebsocket was opened\n')
 
     def connectDB(self, password: str):
         """
@@ -79,10 +79,9 @@ class Binance(websocket.WebSocketApp):
         """
         return pymysql.connect(host='127.0.0.1', port=int(3306), user="root", password=password, db="binance", charset='utf8mb4')
 
-    # создание запроса к Binance
     def message(self, msg: str):
         """
-        Метод получает поток данных, конвертирует данные с биржи в json объект, а затем в  и фильтрует данные
+        Метод получает поток данных, конвертирует данные с биржи в json объект, а затем фильтрует данные
 
         Parameters
         ----------
@@ -90,7 +89,7 @@ class Binance(websocket.WebSocketApp):
             поток данных
         """
         data = json.loads(msg)  # выгрузим json
-        # переберем данных формата json
+
         if 'stream' in data:
             if data['stream'] == '!ticker@arr':
                 self.all_market_stream(data['data'], p=False)
@@ -152,3 +151,5 @@ def symbol_ticker(symbol: str):
 def threads(query1: str, query2: str):
     """Функция для создания многопоточного запроса по нескольким инструментам"""
     return threading.Thread(target=Binance, args=(f'wss://fstream.binance.com:443/stream?streams={query1}/{query2}',)).start()
+
+symbol_ticker('ethusdt')
