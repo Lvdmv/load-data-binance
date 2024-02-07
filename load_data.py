@@ -5,33 +5,88 @@ import threading
 import json
 import pymysql
 
+PASSWORD = '#######'
 
 # Создадим класс Binance, наследующий библиотеу WebSocket с приложением WebSocketApp
 class Binance(websocket.WebSocketApp):
-    '''Класс загрузки цен c биржи Binance с помощью WebSocket и сохранение в MySQL базу '''
+    '''Класс Binance для загрузки цен c биржи Binance
+
+    Класс Binance является подклассом  принимает поток данных с помощью WebSocket и сохранение в MySQL базу данных
+
+    Attributes
+    ----------
+    on_message: str
+        получает поток данных с биржи
+    on_error: str
+        присылает сообщение об ошибке
+    on_close: str
+        присылает сообщение о закрытии подключения
+    run_forever
+        запускает основной поток данных
+
+    Methods
+    -------
+    on_open(): str
+        метод открытия соединения
+    connectDB()
+        метод создания подключения к базе данных
+    message()
+        метод для получения и обработки данных
+    all_market_stream()
+        загружает данные в базу данных
+    '''
     # инициализируем подключение к бирже Binance
     # пропишем свойства внутри класса, для открытия соединения, обработки сообщения, обработать возможную ошибку и закрытие
     def __init__(self, url):
-        super().__init__(url=url, on_open = self.on_open)
+        """
+        Инициализируем подключение к бирже Binance
 
+        Attributes
+        ----------
+        url:
+            получение url адреса для подключения к бирже
+        """
+        super().__init__(url=url, on_open = self.on_open) # обращаемся к атрибутам родительского класса websoket
+        '''функции для событий открытия соединения, получения сообщений, закрытия соединения'''
         self.on_message = lambda ws, msg: self.message(msg)
         self.on_error = lambda ws, er: print('Error', er)
         self.on_close = lambda ws: print('### closed ###')
-        # подключимся к базе данных
-        self.run_forever()
-    # подключение к бирже
-    # открытие соединения
-    def on_open(self, ws,):
+        self.run_forever() # метод для запуска главного цикла обработки сообщений
+
+    def on_open(self, ws: str,) -> None:
+        """
+        Открытие соединения
+
+        Parameters
+        ----------
+        ws: str
+            объект WebSocketApp
+        """
         print('Websocket was opened')
 
-    # подключение к базе данных
-    def connectDB(self):
-        return pymysql.connect(host='127.0.0.1', port=int(3306), user="root", password='745088Vt', db="binance", charset='utf8mb4')
+    def connectDB(self, password: str) -> None:
+        """
+        Подключение к базе данных
+
+        Parameters
+        ----------
+        password: str
+            пароль
+        """
+        return pymysql.connect(host='127.0.0.1', port=int(3306), user="root", password=password, db="binance", charset='utf8mb4')
 
     # создание запроса к Binance
-    def message(self, msg):
-        data = json.loads(msg) # выгрузим json в массив
-        # переберем массив данных формата json
+    def message(self, msg: str) -> str:
+        """
+        Метод получает поток данных, конвертирует данные с биржи в json объект, а затем в  и фильтрует данные
+
+        Parameters
+        ----------
+        msg: str
+            поток данных
+        """
+        data = json.loads(msg) # выгрузим json
+        # переберем данных формата json
         if 'stream' in data:
             if data['stream'] == '!ticker@arr':
                 self.all_market_stream(data['data'], p=False)
@@ -39,7 +94,7 @@ class Binance(websocket.WebSocketApp):
             elif data['stream'].endswith('@arr'):
                 print(f"Цена фьючерса: {data['data']['s']} = {data['data']['c']} на {data['data']['E']}\n")
 
-            elif data['stream'].endswith('Price'):
+            elif data['stream'].endswith(('Price', 'aggTrade')):
                 print(f"Цена фьючерса: {data['data']['s']} = {data['data']['p']} на {data['data']['E']}\n")
 
             else:
@@ -49,10 +104,20 @@ class Binance(websocket.WebSocketApp):
         else:
             self.all_market_stream(data, p=True)
 
-    # загрузка потока котировок всех фьючерсных пар
-    def all_market_stream(self, new_data, p):
-        # подключимся к базе данных
-        conn = self.connectDB()
+
+    def all_market_stream(self, new_data: list, p: bool) -> None:
+        """
+        Метод для загрузки данных в базу при разрешении флага p
+        или вывод текущих данных по каждому фьючерсу
+
+        Parameters
+        ----------
+        new_data: list
+            список данных по инструменту
+        p: bool
+            флаг отвечающий за загрузку данных  в базу или вывод из в терминал
+        """
+        conn = self.connectDB(PASSWORD) # создание соединения с базой данных
         cursor = conn.cursor()
         if isinstance(new_data, list):
             for crypto_symbol in new_data:
@@ -69,16 +134,28 @@ class Binance(websocket.WebSocketApp):
         if not p:
             print('ИДЕТ ЗАГРУЗКА ОСНОВНОГО ПОТОКА В БАЗУ ДАННЫХ\n')
 
+# функции потоков
+def all_market_tickers() -> None:
+    """Функция для получения потока данных по всем фьючерсам"""
+    return threading.Thread(target=Binance, args=('wss://fstream.binance.com:443/ws/!ticker@arr',)).start()
 
-    # функции потоков
-    def all_market_tickers():
-        # загрузка url и параметров
-        return threading.Thread(target=Binance, args=('wss://fstream.binance.com:443/ws/!ticker@arr',)).start()
+def symbol_ticker(symbol: str) -> None:
+    """Функция для получения данных по конкретному фьючерсу"""
+    return threading.Thread(target=Binance, args=(f'wss://fstream.binance.com:443/ws/{symbol}@ticker',)).start()
 
-    # данные конкретного фьючерса
-    def symbol_ticker(symbol):
-        return threading.Thread(target=Binance, args=(f'wss://fstream.binance.com:443/ws/{symbol}@ticker',)).start()
+def threads(query1: str, query2: str) -> None:
+    """Функция для создания многопоточного запроса по нескольким инструментам"""
+    return threading.Thread(target=Binance, args=(f'wss://fstream.binance.com:443/stream?streams={query1}/{query2}',)).start()
 
-    # создание многопоточности
-    def threads(query1, query2):
-        return threading.Thread(target=Binance, args=(f'wss://fstream.binance.com:443/stream?streams={query1}/{query2}',)).start()
+
+# """Посмотрим на данные по фьючерсу BTCUSDT"""
+# bd_query = 'SELECT symbols, round(price, 4) as price, time_update FROM binance.binance_price WHERE symbols LIKE "BTCUSDT"'
+
+# conn = query.connectDB(PASSWORD)
+# cursor = conn.cursor()
+# cursor.execute(bd_query)
+# rows = cursor.fetchall()
+# for row in rows:
+#     print(row)
+# print("#" * 20)
+# threads('ethusdt@markPrice', '!ticker@arr')
