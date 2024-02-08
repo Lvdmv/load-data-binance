@@ -22,13 +22,13 @@
 
 ### Загрузка данных из нескольких потоков(многопоточность)
 
-<img src="https://github.com/Lvdmv/load-data-binance/blob/main/requests/thread3.png" width="1700" height="800" />
+<img src="https://github.com/Lvdmv/load-data-binance/blob/main/requests/threads4.png" width="1700" height="800" />
 
 
 
 ### Обращение к полученной базе. Посмотрим на данные цены и времени после последнего обновления фьючерса
 
-<img src="https://github.com/Lvdmv/load-data-binance/blob/main/requests/querydb.png" width="1700" height="1000" />
+<img src="https://github.com/Lvdmv/load-data-binance/blob/main/requests/db_query2.png" width="1700" height="1000" />
 
 
 
